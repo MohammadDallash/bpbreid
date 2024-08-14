@@ -112,9 +112,7 @@ def reset_config(cfg, args):
     if args.root:
         cfg.data.root = args.root
     if args.save_dir:
-        cfg.data.save_dir = args.save_dir
-    if args.inference_enabled:
-        cfg.inference.enabled = args.inference_enabled
+        cfg.data.save_dir = args.save_dir  
     if args.sources:
         cfg.data.sources = args.sources
     if args.targets:
@@ -123,6 +121,7 @@ def reset_config(cfg, args):
         cfg.data.transforms = args.transforms
     if args.job_id:
         cfg.project.job_id = args.job_id
+
 
 
 def main():
@@ -167,26 +166,25 @@ def main():
         default=None,
         help='Slurm job id'
     )
-    parser.add_argument(
-        '--inference-enabled',
-        type=bool,
-        default=False,
-    )
-    args = parser.parse_args()
+   
+    args = parser.parse_args() ##1
 
     cfg = build_config(args, args.config_file)
 
-    engine, model = build_torchreid_model_engine(cfg)
-    print('Starting experiment {} with job id {} and creation date {}'.format(cfg.project.experiment_id,
+  
+    if cfg.inference.enabled:
+        model = build_torchreid_model(cfg)
+        print("Starting inference on external data")
+        extract_reid_features(cfg, cfg.inference.input_folder,  model)
+    else:
+        engine, model = build_torchreid_model_engine(cfg)
+        print('Starting experiment {} with job id {} and creation date {}'.format(cfg.project.experiment_id,
                                                                               cfg.project.job_id,
                                                                               cfg.project.start_time))
-    engine.run(**engine_run_kwargs(cfg))
-    print(
+        engine.run(**engine_run_kwargs(cfg))
+        print(
         'End of experiment {} with job id {} and creation date {}'.format(cfg.project.experiment_id, cfg.project.job_id,
                                                                           cfg.project.start_time))
-    if cfg.inference.enabled:
-        print("Starting inference on external data")
-        extract_reid_features(cfg, cfg.inference.input_folder, cfg.data.save_dir, model)
 
 
 def build_config(args=None, config_file=None, config=None):
@@ -268,6 +266,37 @@ def build_torchreid_model_engine(cfg):
     )
     engine = build_engine(cfg, datamanager, model, optimizer, scheduler, writer, engine_state)
     return engine, model
+
+def build_torchreid_model(cfg):
+    if cfg.project.debug_mode:
+        torch.autograd.set_detect_anomaly(True)
+    logger = Logger(cfg)
+    set_random_seed(cfg.train.seed)
+    print('Show configuration\n{}\n'.format(cfg))
+    print('Collecting env info ...')
+    print('** System info **\n{}\n'.format(collect_env_info()))
+    if cfg.use_gpu:
+        torch.backends.cudnn.benchmark = True
+    print('Building model: {}'.format(cfg.model.name))
+
+    model = torchreid.models.build_model(
+        name=cfg.model.name,
+        loss=cfg.loss.name,
+        pretrained=cfg.model.pretrained,
+        use_gpu=cfg.use_gpu,
+        config=cfg
+    )
+    logger.add_model(model)
+    num_params, flops = compute_model_complexity(
+        model, cfg
+    )
+    print('Model complexity: params={:,} flops={:,}'.format(num_params, flops))
+    if cfg.model.load_weights and check_isfile(cfg.model.load_weights):
+        load_pretrained_weights(model, cfg.model.load_weights)
+    if cfg.use_gpu:
+        model = nn.DataParallel(model).cuda()
+
+    return  model
 
 
 if __name__ == '__main__':

@@ -12,7 +12,8 @@ import torch.nn as nn
 
 from .tools import mkdir_if_missing
 import collections
-from torch._six import string_classes
+# from torch._six import string_classes
+string_classes = str
 import re
 
 __all__ = [

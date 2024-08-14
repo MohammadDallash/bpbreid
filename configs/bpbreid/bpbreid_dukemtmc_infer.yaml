@@ -1,0 +1,19 @@
+model:
+  name: 'bpbreid'
+  load_weights: 'pretrained_models/bpbreid_dukemtmcreid_hrnet32_10669.pth'
+  load_config: True
+  bpbreid:
+    mask_filtering_training: False
+    mask_filtering_testing: True
+    learnable_attention_enabled: True
+    backbone: 'hrnet32'
+    test_embeddings: ['bn_foreg', 'parts']
+    masks:
+      dir: 'pifpaf_maskrcnn_filtering'
+      preprocess: 'five_v'
+
+inference:
+  enabled: True
+  input_folder: 'inputs/reid_inputs'
+  batch_size: 14
+  visrank_topk: 15

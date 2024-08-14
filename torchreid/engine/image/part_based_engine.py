@@ -131,7 +131,7 @@ class ImagePartBasedEngine(Engine):
 
     def _feature_extraction(self, data_loader):
         f_, pids_, camids_, parts_visibility_, p_masks_, pxl_scores_, anns = [], [], [], [], [], [], []
-        for batch_idx, data in enumerate(tqdm(data_loader, desc=f'Batches processed')):
+        for batch_idx, data in enumerate(tqdm(data_loader, desc=f'Batches processed ')):
             imgs, masks, pids, camids = self.parse_data_for_eval(data)
             if self.use_gpu:
                 if masks is not None:

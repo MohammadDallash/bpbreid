@@ -141,3 +141,9 @@ pretrained_models/
 debug*
 /.idea/
 /configs_user/
+*.jpg
+*.png
+*.npy
+*.mp4
+*.json
+*.txt

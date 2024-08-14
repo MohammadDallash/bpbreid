@@ -136,6 +136,7 @@ def _compute_distance_matrix_using_bp_features_and_masks(qf, gf, qf_parts_visibi
     if use_gpu:
         qf = qf.cuda()
         qf_parts_visibility = qf_parts_visibility.cuda()
+        
 
     qf_parts_visibility = qf_parts_visibility.t()
     pairwise_dist_, body_part_pairwise_dist_ = [], []
@@ -181,6 +182,7 @@ def _compute_distance_matrix_using_bp_features_and_masks(qf, gf, qf_parts_visibi
 def _compute_distance_matrix_using_bp_features_and_visibility_scores(qf, gf, qf_parts_visibility, gf_parts_visibility, dist_combine_strat, batch_size_pairwise_dist_matrix, use_gpu, metric):
     batch_gf_list = torch.split(gf, batch_size_pairwise_dist_matrix)
     batch_gf_parts_visibility_list = torch.split(gf_parts_visibility, batch_size_pairwise_dist_matrix)
+
 
     qf_parts_visibility_cpu = qf_parts_visibility
     if use_gpu:

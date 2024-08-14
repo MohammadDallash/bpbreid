@@ -100,7 +100,7 @@ def show_avai_models():
 
 
 def build_model(
-    name, num_classes, loss='softmax', pretrained=True, use_gpu=True, **kwargs
+    name, num_classes = 0, loss='softmax', pretrained=True, use_gpu=True, **kwargs
 ):
     """A function wrapper for building a model.
 
