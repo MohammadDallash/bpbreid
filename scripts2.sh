@@ -12,3 +12,6 @@ python torchreid/scripts/main.py --config-file configs/bpbreid/bpbreid_dukemtmc_
 python torchreid/scripts/main.py --config-file configs/bpbreid/bpbreid_market1501_infer.yaml
 python torchreid/scripts/main.py --config-file configs/bpbreid/bpbreid_occ_duke_infer.yaml
 python torchreid/scripts/main.py --config-file configs/bpbreid/bpbreid_p_dukemtmc_infer.yaml
+
+#Merge
+python merge.py

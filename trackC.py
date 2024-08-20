@@ -7,7 +7,6 @@ import cv2
 from tqdm import tqdm
 import os
 import math
-from deep_sort_realtime.deepsort_tracker import DeepSort
 from Util import *
 import numpy as np
 from time import time
@@ -74,12 +73,12 @@ else:
     print("GPU is not available. Using CPU.")
 
 # Load a COCO-pretrained RT-DETR-l model
-yolo_model = RTDETR("pretrained_models/rtdetr-l.pt")
+yolo_model = YOLO("pretrained_models/yolov8_people.pt")
 yolo_model.to(device)
 
 Q = 0
-start_sec = Q * 15 * 60 + 60  # Start tracking from 1 minute
-n_mins = 15
+start_sec = 0 # Start tracking from 1 minute
+n_mins = 10
 end_sec = start_sec + n_mins * 60
 
 cap = cv2.VideoCapture(VID_PATH)
@@ -107,7 +106,7 @@ cv2.setMouseCallback('Adjust Areas', mouse_callback)
 ret, frame = cap.read()
 
 # Initialize Deep SORT
-tracker = DeepSort(max_age=30, n_init=3, max_cosine_distance=0.2, embedder_gpu=True)
+tracker = sv.ByteTrack(lost_track_buffer = 100)
 
 while True:
     if not ret:
@@ -146,75 +145,32 @@ while cap.isOpened() and frame_index < frames_limit:
     ret, frame = cap.read()
 
     if not ret:
-        break 
+            break 
 
     if not save_tamp_frame_on_disk(frame, frame_index):
         continue
     
-    results = yolo_model(frame, classes=[0], conf=0.10, verbose=False)[0]
+    results = yolo_model(frame, classes=[0], conf=0.25, verbose=False)[0]
     detections = sv.Detections.from_ultralytics(results)
 
-    # Extract the bounding boxes in xyxy format from the detections
-    bbox_xyxy = detections.xyxy
-    
-
-    # Convert from xyxy to xywh format
-    bbox_xywh = []
-    for bbox in bbox_xyxy:
-        x1, y1, x2, y2 = bbox
-        w = x2 - x1         
-        h = y2 - y1         
-        bbox_xywh.append([x1, y1, w, h])
-
-    # Convert to numpy array for Deep SORT
-    bbox_xywh = np.array(bbox_xywh)
-
-
-    # Confidence scores from detections
-    confs = detections.confidence
-
-    classes = [0] * len(confs)
-    # Combine the arrays into a list of tuples
-    detections = [(bbox.tolist(), conf, cls) for bbox, conf, cls in zip(bbox_xywh, confs, classes)]
-
-    s = time()
-
-    # Update tracker with current frame detections
-    outputs = tracker.update_tracks(raw_detections = detections, frame = frame)
-    # Convert outputs from Deep SORT to a format compatible with your tracking pipeline
-
-    print(time() - s)
-    class TrackedDetections:
-        def __init__(self):
-            self.xyxy = []
-            self.tracker_id = []
-
-    # Instantiate the class
-    tracked_detections = TrackedDetections()
-
-    # Populate the class with bounding boxes and IDs from Deep SORT outputs
-    for track in outputs:
-        bbox = track.to_tlbr()  # Convert to (x1, y1, x2, y2)
-        tracked_detections.xyxy.append(bbox)
-        tracked_detections.tracker_id.append(track.track_id)
-
+    tracked_detections = tracker.update_with_detections(detections)
 
 
     frame, frame_counts, tracking_data = process_detections(frame, frame_index, tracked_detections, frame_counts, tracking_data)
 
-    # # Draw the area_far rectangle in red
-    # cv2.rectangle(frame, (area_far[0], area_far[1]), (area_far[2], area_far[3]), (0, 0, 255), 2)
+    # Draw the area_far rectangle in red
+    cv2.rectangle(frame, (area_far[0], area_far[1]), (area_far[2], area_far[3]), (0, 0, 255), 2)
 
-    # # Draw the area_near rectangle in blue
-    # cv2.rectangle(frame, (area_near[0], area_near[1]), (area_near[2], area_near[3]), (255, 0, 0), 2)
+    # Draw the area_near rectangle in blue
+    cv2.rectangle(frame, (area_near[0], area_near[1]), (area_near[2], area_near[3]), (255, 0, 0), 2)
 
-    # # Draw the frame number on the frame
-    # cv2.putText(frame, f'Frame: {frame_index}', (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    # Draw the frame number on the frame
+    cv2.putText(frame, f'Frame: {frame_index}', (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-    # # Display the frame with the tracking
-    # cv2.imshow('Tracking', frame)
+    # Display the frame with the tracking
+    cv2.imshow('Tracking', frame)
     
-    # frame_index += 1
+    frame_index += 1
     pbar.update(1)
     
     # Exit if 'q' is pressed
@@ -263,8 +219,12 @@ for obj_id, frames in tracking_data.items():
     biggest_frame_near = propose_best(frames, area_near)
     biggest_frame_far = propose_best(frames, area_far)
 
-    if biggest_frame_near:
+
+    if biggest_frame_far != None:
+        save_img(biggest_frame_far, gallery_output_folder)
+
+
+    if biggest_frame_near != None and biggest_frame_far != None:
         save_img(biggest_frame_near, query_output_folder)
 
-    if biggest_frame_far:
-        save_img(biggest_frame_far, gallery_output_folder)
+    

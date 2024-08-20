@@ -13,6 +13,8 @@ from Util import clear_or_create_folder
 import matplotlib.pyplot as plt
 from ennv import *
 import json
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 test_embeddings = ['bn_foreg', 'parts']
 
@@ -98,20 +100,19 @@ def get_top_k_closest_gallery_images(query_idx, distmat, gallery_images, k=5):
     return top_k_gallery_images, top_k_distances
 
 
-import os
-import cv2
-import matplotlib.pyplot as plt
-
-def save_images(query_idx, query_images, top_k_gallery_images, top_k_distances, output_folder, plt_imgs=False):
+def save_images(query_idx, query_images, top_k_gallery_images, top_k_distances, output_folder, plt_imgs=False, GD_exists=True):
     # Load the query image
     query_image = cv2.imread(query_images[query_idx])
-    query_image_file_name = os.path.basename(query_images[query_idx])
+    query_image_base_name = os.path.basename(query_images[query_idx])
     query_image = cv2.cvtColor(query_image, cv2.COLOR_BGR2RGB)  # Convert to RGB for Matplotlib
 
+    # Number of columns depends on whether the ground truth image exists
+    num_columns = len(top_k_gallery_images) + 1 + (1 if GD_exists else 0)
+    
     # Create a figure for plotting
-    fig, axs = plt.subplots(1, len(top_k_gallery_images) + 1, figsize=(15, 5))
+    fig, axs = plt.subplots(1, num_columns, figsize=(15, 3))
 
-    # Plot the query image
+    # Plot the query image in the first column
     axs[0].imshow(query_image)
     axs[0].set_title('Query Image')
     axs[0].axis('off')
@@ -120,9 +121,42 @@ def save_images(query_idx, query_images, top_k_gallery_images, top_k_distances, 
     for i, (gallery_image_path, distance) in enumerate(zip(top_k_gallery_images, top_k_distances)):
         gallery_image = cv2.imread(gallery_image_path)
         gallery_image = cv2.cvtColor(gallery_image, cv2.COLOR_BGR2RGB)  # Convert to RGB for Matplotlib
+        
         axs[i + 1].imshow(gallery_image)
         axs[i + 1].set_title(f'Top {i + 1}\nDist: {distance:.2f}')
         axs[i + 1].axis('off')
+
+        # Get the base name of the gallery image
+        gallery_image_base_name = os.path.basename(gallery_image_path)
+
+        # If the gallery image's base name matches the query image's base name, draw a red frame around it
+        if query_image_base_name == gallery_image_base_name:
+            rect = patches.Rectangle((0, 0), gallery_image.shape[1], gallery_image.shape[0], 
+                                     linewidth=5, edgecolor='red', facecolor='none')
+            axs[i + 1].add_patch(rect)
+
+    # If ground truth exists, create a placeholder in the last column
+    if GD_exists:
+        # Extract the base name of the first gallery image and replace it in the query image's base name
+        
+        # Build the full path for the ground truth placeholder image
+        placeholder_image_path = os.path.join(os.path.dirname(top_k_gallery_images[0]), query_image_base_name)
+
+        if os.path.exists(placeholder_image_path):
+            placeholder_image = cv2.imread(placeholder_image_path)
+            placeholder_image = cv2.cvtColor(placeholder_image, cv2.COLOR_BGR2RGB)
+        else:
+            # Use a white placeholder if the image doesn't exist
+            placeholder_image = np.ones_like(query_image) * 255  # white placeholder
+        
+        axs[-1].imshow(placeholder_image)
+        axs[-1].set_title('GT Img')
+        axs[-1].axis('off')
+
+        # Draw a green frame around the placeholder
+        rect = patches.Rectangle((0, 0), placeholder_image.shape[1], placeholder_image.shape[0], 
+                                 linewidth=5, edgecolor='green', facecolor='none')
+        axs[-1].add_patch(rect)
 
     plt.tight_layout()
 
@@ -130,7 +164,7 @@ def save_images(query_idx, query_images, top_k_gallery_images, top_k_distances, 
     os.makedirs(output_folder, exist_ok=True)
 
     # Save the figure
-    output_file_path = os.path.join(output_folder, f'{query_image_file_name}_top_{len(top_k_gallery_images)}.png')
+    output_file_path = os.path.join(output_folder, f'{query_image_base_name}_top_{len(top_k_gallery_images)}.png')
 
     # Optionally show the images
     if plt_imgs:
@@ -138,13 +172,8 @@ def save_images(query_idx, query_images, top_k_gallery_images, top_k_distances, 
     else:
         plt.savefig(output_file_path)
 
-
     # Close the plot to free up memory
     plt.close(fig)
-
-    
-
-
 
 
 def extract_dataset_name(file_path):

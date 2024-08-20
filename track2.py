@@ -20,7 +20,7 @@ else:
     print("GPU is not available. Using CPU.")
 
 # Build a YOLOv9c model from pretrained weight
-yolo_model = YOLO("pretrained_models/yolov9c.pt")
+yolo_model = YOLO("pretrained_models/yolov8_people.pt")
 tracker = sv.ByteTrack()
 
 yolo_model.to(device)
@@ -73,7 +73,7 @@ while cap.isOpened() and frame_index < frames_limit:
         continue
     
 
-    results = yolo_model(frame, classes=[0], conf=0.45, verbose=False)[0]
+    results = yolo_model(frame, classes=[0], conf=0.35, verbose=False)[0]
 
     detections = sv.Detections.from_ultralytics(results)
     tracked_detections = tracker.update_with_detections(detections)

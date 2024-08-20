@@ -40,6 +40,6 @@ def merge_images_from_folders(folders, output_folder):
 
 # Example usage
 folders = ["outputs/occluded_duke", "outputs/market1501", "outputs/p_dukemtmc", "outputs/dukemtmcreid"]  # Replace with your folder paths
-output_folder = "merged_output"
+output_folder = "outputs/merged_output"
 clear_or_create_folder(output_folder)
 merge_images_from_folders(folders, output_folder)
