@@ -32,10 +32,6 @@ def get_frame_from_video(frame_num):
     
     return frame
 
-def is_in_area(center, area):
-    x1, y1, x2, y2 = area
-    cx, cy = center
-    return x1 <= cx <= x2 and y1 <= cy <= y2
 
 
 def save_tamp_frame_on_disk(frame, frame_index):
@@ -51,31 +47,6 @@ def save_tamp_frame_on_disk(frame, frame_index):
         print(f"Warning: Frame {frame_index} is empty or invalid. Skipping.")
         return False
 
-
-def process_detections(frame, frame_index, tracked_detections, frame_counts, tracking_data):
-    for detection, obj_id in zip(tracked_detections.xyxy, tracked_detections.tracker_id):
-        if obj_id not in frame_counts:
-            frame_counts[obj_id] = 0
-            tracking_data[obj_id] = []
-        
-        frame_counts[obj_id] += 1
-
-        x1, y1, x2, y2 = map(int, detection)
-        tracking_data[obj_id].append((frame_index, (x1, y1, x2, y2)))  # Store frame number and detection box
-
-        # Draw the bounding box and tracker ID on the frame
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(frame, f'ID: {obj_id}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-
-    return frame, frame_counts, tracking_data
-        
-        
+  
 
 
-def convert_to_bounding_box(corner_points):
-    min_x = min(corner_points[0][0], corner_points[1][0])
-    min_y = min(corner_points[0][1], corner_points[1][1])
-    max_x = max(corner_points[0][0], corner_points[1][0])
-    max_y = max(corner_points[0][1], corner_points[1][1])
-
-    return min_x, min_y, max_x, max_y

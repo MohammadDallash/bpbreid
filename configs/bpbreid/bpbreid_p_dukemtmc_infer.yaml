@@ -15,6 +15,7 @@ model:
 inference:
   enabled: True
   input_folder: 'inputs/reid_inputs'
+  output_folder: 'outputs'
   batch_size: 14
   visrank_topk: 10
 

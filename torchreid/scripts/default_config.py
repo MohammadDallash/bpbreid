@@ -210,8 +210,9 @@ def get_default_config():
     cfg.inference = CN()
     cfg.inference.enabled = False
     cfg.inference.input_folder = ""
+    cfg.inference.output_folder = ""
     cfg.inference.batch_size = 14
-    cfg.inference.visrank_topk = 5
+    cfg.inference.visrank_topk = 10
 
     return cfg
 

@@ -166,7 +166,6 @@ def save_images(query_idx, query_images, top_k_gallery_images, top_k_distances, 
     # Save the figure
     output_file_path = os.path.join(output_folder, f'{query_image_base_name}_top_{len(top_k_gallery_images)}.png')
 
-    # Optionally show the images
     if plt_imgs:
         plt.show()
     else:
@@ -185,22 +184,6 @@ def extract_dataset_name(file_path):
     return dataset_name
 
 
-def calculate_average_ranks(top_k_dict):
-    total_rank = 0.0
-    num_query_images = len(top_k_dict)
-
-    for query_image, gallery_images in top_k_dict.items():
-        if query_image not in gallery_images:
-            cur_rank = len(gallery_images) + 1
-        else:
-            for rank, gallery_image in enumerate(gallery_images, start=1):
-                if gallery_image == query_image:
-                    cur_rank = rank
-                    break
-                    
-        total_rank += cur_rank
-
-    return total_rank / num_query_images
 
 
 def extract_reid_features(cfg, imgs_folder, model=None, model_path=None, num_classes=None):
@@ -253,8 +236,9 @@ def extract_reid_features(cfg, imgs_folder, model=None, model_path=None, num_cla
 
     dataset_name = extract_dataset_name(cfg.model.load_weights)
 
-    folder_name = os.path.join('outputs', dataset_name)
-    clear_or_create_folder(folder_name)
+    
+    output_folder_name = os.path.join(cfg.inference.output_folder, dataset_name)
+    clear_or_create_folder(output_folder_name)
 
     
     print(f"{len(query_images)} Query images embedding done with {len(query_images)/query_time:.2f} img per sec")
@@ -264,7 +248,6 @@ def extract_reid_features(cfg, imgs_folder, model=None, model_path=None, num_cla
     print(f'Total time embedding for + matching {time.time() - start_time_query:.2f} seconds' )
 
 
-    # top_k_dict = {}
 
     for query_idx, query_image_path in enumerate(query_images):
         # Get the top-k closest gallery images and their distances
@@ -273,41 +256,4 @@ def extract_reid_features(cfg, imgs_folder, model=None, model_path=None, num_cla
         )
 
         # Save and visualize the query image and the top-k closest gallery images
-        save_images(query_idx, query_images, top_k_gallery_images, top_k_distances, folder_name, GD_exists=False)
-
-        # Extract only the file names (without the full path) for the dictionary
-        # query_image_name = os.path.basename(query_image_path)
-        # top_k_gallery_image_names = [os.path.basename(img) for img in top_k_gallery_images]
-
-        # # Store the mapping of query image to its top-k gallery images
-        # top_k_dict[query_image_name] = top_k_gallery_image_names
-
-
-
-        # # Assuming VID_PATH and dataset_name are defined elsewhere in your code
-        # vid_name_raw = os.path.basename(VID_PATH).split('.')[0]
-        # json_dir = 'outputs/jsons'
-        # json_file_path = os.path.join(json_dir, f'{vid_name_raw}.json')
-
-        # # Ensure the directory exists
-        # if not os.path.exists(json_dir):
-        #     os.makedirs(json_dir)
-
-        # # Calculate the average rank
-        # average_rank = calculate_average_ranks(top_k_dict)
-
-        # # Load or create the JSON file
-        # if os.path.exists(json_file_path):
-        #     # Load existing JSON file
-        #     with open(json_file_path, 'r') as json_file:
-        #         json_dict = json.load(json_file)
-        # else:
-        #     # Create a new JSON structure if the file doesn't exist
-        #     json_dict = {}
-
-        # # Add or update the dataset_name with the average rank
-        # json_dict[dataset_name] = average_rank
-
-        # # Save the updated dictionary back to the JSON file
-        # with open(json_file_path, 'w') as json_file:
-        #     json.dump(json_dict, json_file, indent=4)
+        save_images(query_idx, query_images, top_k_gallery_images, top_k_distances, output_folder_name, GD_exists=False)
