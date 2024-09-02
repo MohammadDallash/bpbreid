@@ -25,10 +25,10 @@ tracker = sv.ByteTrack()
 
 yolo_model.to(device)
 
-Q = 0
+
 
 start_sec = Q*15*60 + 60 + 160  # Start tracking from 1 minute
-n_mins = 15  # Track for 15 minutes
+n_mins = 12  # Track for 15 minutes
 
 end_sec = start_sec + n_mins * 60
 
@@ -62,8 +62,8 @@ area_far = (0, 500, 1000, 500)  # Example coordinates for area_far
 
 while cap.isOpened() and frame_index < frames_limit:
     ret, frame = cap.read()
-    if not ret:
-        break 
+    # if not ret:
+    #     break 
 
     if not save_tamp_frame_on_disk(frame, frame_index):
         continue
@@ -99,7 +99,7 @@ cap.release()
 cv2.destroyAllWindows()
 
 output_folder = 'inputs/reid_inputs/gallery'
-clear_or_create_folder(output_folder)
+# clear_or_create_folder(output_folder)
 
 
 
@@ -139,5 +139,5 @@ for obj_id, frames in tracking_data.items():
         cropped_img = frame[y1:y2, x1:x2]
 
 
-        cv2.imwrite(os.path.join(output_folder, f'{obj_id}_frame_{frame_num}_{i+1}.jpg'), cropped_img)
+        cv2.imwrite(os.path.join(output_folder, f'Q_{Q}_{obj_id}_frame_{frame_num}_{i+1}.jpg'), cropped_img)
 
